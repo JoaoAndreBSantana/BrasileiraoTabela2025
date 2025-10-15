@@ -42,7 +42,7 @@ class Artilheiro {
   final int gols;
   final int assistencias;
   final String foto;
-  final String escudoTime; // novo campo
+  final String escudoTime; 
 
   Artilheiro({
     required this.nome,

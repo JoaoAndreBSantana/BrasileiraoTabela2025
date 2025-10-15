@@ -22,14 +22,14 @@ class TabelaBrasileirao extends StatefulWidget {
 
 class _TabelaBrasileiraoState extends State<TabelaBrasileirao> {
   String filtro = '';
-  int abaSelecionada = 0; // 0 = Tabela, 1 = Estatísticas
-  int tipoEstatistica = 0; // 0 = Gols, 1 = Assistências
+  int abaSelecionada = 0; 
+  int tipoEstatistica = 0; 
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Abas com ícones
+        
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
@@ -56,7 +56,7 @@ class _TabelaBrasileiraoState extends State<TabelaBrasileirao> {
           ),
         ),
         if (abaSelecionada == 0)
-          // TABELA COM PESQUISA
+          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
@@ -81,7 +81,7 @@ class _TabelaBrasileiraoState extends State<TabelaBrasileirao> {
             ),
           ),
         if (abaSelecionada == 0)
-          // TABELA FUTUREBUILDER
+          
           Expanded(
             child: FutureBuilder<List<Time>>(
               future: carregarTimes(),
@@ -100,7 +100,7 @@ class _TabelaBrasileiraoState extends State<TabelaBrasileirao> {
 
                 return Column(
                   children: [
-                    // Cabeçalho fixo
+                    
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(
@@ -202,7 +202,7 @@ class _TabelaBrasileiraoState extends State<TabelaBrasileirao> {
             ),
           ),
         if (abaSelecionada == 1)
-          // ESTATÍSTICAS: GOLS/ASSISTÊNCIAS
+         
           Column(
             children: [
               Padding(
@@ -228,9 +228,9 @@ class _TabelaBrasileiraoState extends State<TabelaBrasileirao> {
                   ],
                 ),
               ),
-              // Lista de artilheiros correta!
+              
               SizedBox(
-                height: 400, // ajuste conforme necessário
+                height: 400, 
                 child: ListView.builder(
                   itemCount: tipoEstatistica == 0
                       ? listaDeArtilheirosGols.length
