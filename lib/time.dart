@@ -36,6 +36,7 @@ class Time {
       jogos: json['jogos'],
       vitorias: json['vitorias'],
       empates: json['empates'],
+    
       derrotas: json['derrotas'],
       golsPro: json['golsPro'],
       golsContra: json['golsContra'],

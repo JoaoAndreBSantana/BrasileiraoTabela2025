@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'time.dart';
 import 'detalhe_time_page.dart';
+import 'artilheiro_page.dart'; // se a lista de artilheiros estiver lá
 
 Future<List<Time>> carregarTimes() async {
   final dados = await rootBundle.loadString('assets/times.json');
@@ -21,88 +22,255 @@ class TabelaBrasileirao extends StatefulWidget {
 
 class _TabelaBrasileiraoState extends State<TabelaBrasileirao> {
   String filtro = '';
-
-  Color? getLinhaColor(int pos) {
-    if (pos < 4) return Colors.green[100]; // Libertadores
-    if (pos < 12) return Colors.blue[100]; // Sul-Americana
-    if (pos > 15) return Colors.red[100]; // Rebaixamento
-    return null;
-  }
+  int abaSelecionada = 0; // 0 = Tabela, 1 = Estatísticas
+  int tipoEstatistica = 0; // 0 = Gols, 1 = Assistências
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Time>>(
-      future: carregarTimes(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Erro ao carregar dados'));
-        }
-        var times = snapshot.data!;
-        times.sort((a, b) => b.pontos.compareTo(a.pontos));
-        return SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: DataTable(
-            columnSpacing: 16,
-            headingRowHeight: 28,
-            dataRowMinHeight: 28,
-            dataRowMaxHeight: 32,
-            columns: const [
-              DataColumn(label: Text(' ', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text(' ', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text('Time', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text('P', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text('J', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text('V', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text('E', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text('D', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text('GP', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text('GC', style: TextStyle(fontSize: 11))),
-              DataColumn(label: Text('SG', style: TextStyle(fontSize: 11))),
+    return Column(
+      children: [
+        // Abas com ícones
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: Icon(Icons.table_chart,
+                    color: abaSelecionada == 0 ? Colors.green : Colors.grey),
+                tooltip: 'Tabela',
+                onPressed: () {
+                  setState(() => abaSelecionada = 0);
+                },
+              ),
+              const SizedBox(width: 16),
+              IconButton(
+                icon: Icon(Icons.bar_chart,
+                    color: abaSelecionada == 1 ? Colors.blue : Colors.grey),
+                tooltip: 'Estatísticas',
+                onPressed: () {
+                  setState(() => abaSelecionada = 1);
+                },
+              ),
             ],
-            rows: List.generate(times.length, (index) {
-              final time = times[index];
-              return DataRow(
-                color: MaterialStateProperty.all(getLinhaColor(index)),
-                cells: [
-                  DataCell(Text('${index + 1}', style: const TextStyle(fontSize: 11))),
-                  DataCell(
-                    Image.asset(
-                      time.escudo,
-                      width: 16,
-                      height: 16,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.sports_soccer, size: 16);
+          ),
+        ),
+        if (abaSelecionada == 0)
+          // TABELA COM PESQUISA
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Buscar time...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+                hintStyle: const TextStyle(fontSize: 15, color: Colors.grey),
+              ),
+              style: const TextStyle(fontSize: 15, color: Colors.black),
+              onChanged: (value) {
+                setState(() {
+                  filtro = value;
+                });
+              },
+            ),
+          ),
+        if (abaSelecionada == 0)
+          // TABELA FUTUREBUILDER
+          Expanded(
+            child: FutureBuilder<List<Time>>(
+              future: carregarTimes(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Erro ao carregar dados'));
+                }
+                var times = snapshot.data!;
+                times.sort((a, b) => b.pontos.compareTo(a.pontos));
+                var timesFiltrados = filtro.isNotEmpty
+                    ? times.where((t) => t.nome.toLowerCase().contains(filtro.toLowerCase())).toList()
+                    : times;
+
+                return Column(
+                  children: [
+                    // Cabeçalho fixo
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 32, child: Text(' ', style: TextStyle(fontWeight: FontWeight.bold))),
+                          const Expanded(
+                            child: Center(
+                              child: Text(' ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                          _headerStat('P'),
+                          _headerStat('J'),
+                          _headerStat('V'),
+                          _headerStat('E'),
+                          _headerStat('D'),
+                          _headerStat('GP'),
+                          _headerStat('GC'),
+                          _headerStat('SG'),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: timesFiltrados.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Time não encontrado',
+                                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: timesFiltrados.length,
+                              itemBuilder: (context, index) {
+                                final time = timesFiltrados[index];
+                                final posicao = times.indexOf(time);
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => DetalheTimePage(time: time),
+                                      ),
+                                    );
+                                  },
+                                  child: Card(
+                                    margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(
+                                        color: posicao < 4
+                                            ? Colors.green
+                                            : (posicao < 12 ? Colors.blue : (posicao > 15 ? Colors.red : Colors.transparent)),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Row(
+                                        children: [
+                                          SizedBox(width: 32, child: Text('${posicao + 1}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                                          Expanded(
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Image.asset(
+                                                  time.escudo,
+                                                  width: 32,
+                                                  height: 32,
+                                                  errorBuilder: (c, e, s) => const Icon(Icons.sports_soccer),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                if (posicao < 4)
+                                                  const Icon(Icons.circle, color: Colors.green, size: 14)
+                                                else if (posicao < 12)
+                                                  const Icon(Icons.circle, color: Colors.blue, size: 14)
+                                                else if (posicao > 15)
+                                                  const Icon(Icons.circle, color: Colors.red, size: 14)
+                                              ],
+                                            ),
+                                          ),
+                                          _statNum(time.pontos),
+                                          _statNum(time.jogos),
+                                          _statNum(time.vitorias),
+                                          _statNum(time.empates),
+                                          _statNum(time.derrotas),
+                                          _statNum(time.golsPro),
+                                          _statNum(time.golsContra),
+                                          _statNum(time.saldoGols),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        if (abaSelecionada == 1)
+          // ESTATÍSTICAS: GOLS/ASSISTÊNCIAS
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Gols'),
+                      selected: tipoEstatistica == 0,
+                      onSelected: (v) {
+                        setState(() => tipoEstatistica = 0);
                       },
                     ),
-                  ),
-                  DataCell(
-                    Text(time.nome, style: const TextStyle(fontSize: 11)),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DetalheTimePage(time: time),
-                        ),
-                      );
-                    },
-                  ),
-                  DataCell(Text('${time.pontos}', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text('${time.jogos}', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text('${time.vitorias}', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text('${time.empates}', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text('${time.derrotas}', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text('${time.golsPro}', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text('${time.golsContra}', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text('${time.saldoGols}', style: const TextStyle(fontSize: 11))),
-                ],
-              );
-            }),
+                    const SizedBox(width: 12),
+                    ChoiceChip(
+                      label: const Text('Assistências'),
+                      selected: tipoEstatistica == 1,
+                      onSelected: (v) {
+                        setState(() => tipoEstatistica = 1);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              // Lista de artilheiros correta!
+              SizedBox(
+                height: 400, // ajuste conforme necessário
+                child: ListView.builder(
+                  itemCount: tipoEstatistica == 0
+                      ? listaDeArtilheirosGols.length
+                      : listaDeArtilheirosAssistencias.length,
+                  itemBuilder: (context, index) {
+                    final a = tipoEstatistica == 0
+                        ? listaDeArtilheirosGols[index]
+                        : listaDeArtilheirosAssistencias[index];
+                    return ListTile(
+                      leading: Image.asset(
+                        a.escudoTime,
+                        width: 32,
+                        height: 32,
+                      ),
+                      title: Text(a.nome),
+                      subtitle: Text(a.time),
+                      trailing: tipoEstatistica == 0
+                          ? Text('Gols: ${a.gols}')
+                          : Text('Assistências: ${a.assistencias}'),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        );
-      },
+      ],
+    );
+  }
+
+  Widget _headerStat(String label) {
+    return SizedBox(
+      width: 32,
+      child: Text(label, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _statNum(int value) {
+    return SizedBox(
+      width: 32,
+      child: Text('$value', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)),
     );
   }
 }
