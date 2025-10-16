@@ -1,6 +1,8 @@
 # Brasileirão Tabela 2025
 
 Aplicativo Flutter para acompanhamento do Campeonato Brasileiro de Futebol, com tabela, estatísticas, artilheiros e detalhes dos times.
+## Demonstração
+https://youtube.com/shorts/b5KzdXXEyNo?si=LeERIpx1hL0VZ_jd
 
 ---
 
